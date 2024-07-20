@@ -99,16 +99,3 @@ class Forest(AsciiCanvas):
             height = np.random.randint(min_h, max_h)
             tree = Tree(height, height)
             self.add_element(tree, coord)
-            # break
-
-        # print(canvas)
-
-# class AsciiTree(np.ndarray):
-#
-#     canvas = AsciiCanvas(*inps.win_size)
-#     coords = TreeCoords(inps.win_size, inps.n_trees, inps.method).coords
-#     for coord in coords:
-#         height = np.random.randint(inps.min, inps.max)
-#         tree = AsciiTree(height, height)
-#         canvas.add_element(tree, coord)
-#         break
