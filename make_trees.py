@@ -1,64 +1,63 @@
 from scipy.stats import qmc
 import numpy as np
+from itertools import repeat, cycle
 
 class AsciiCanvas(np.ndarray):
-    def __new__(cls, width: int, height: int, *args, **kwargs):
+    def __new__(cls, width, height, *args, **kwargs):
         shape = (height, width)
         obj = np.empty(shape, dtype=object).view(cls)
         obj.fill(' ')
         return obj
 
-    def add_element(self, element: np.ndarray, offset: tuple[int, int] = (0, 0)):
+    def add_element(self, element, offset=(0, 0)):
+        x_start, y_start = offset
+        y_end = min(y_start + element.shape[0], self.shape[0])
+        x_end = min(x_start + element.shape[1], self.shape[1])
 
-        max_h = min(offset[0] + element.shape[0], self.shape[0])
-        max_w = min(offset[1] + element.shape[1], self.shape[1])
+        # Calculate the valid region within the canvas
+        canvas = self[y_start:y_end, x_start:x_end]
 
-        rows = max_h - offset[0]
-        cols = max_w - offset[1]
+        # Calculate the valid region within the element
+        element_part = element[:y_end - y_start, :x_end - x_start]
 
-        # print('Canvas:', self.shape)
-        # print('Element:', element.shape)
-        # print('Offset:', offset)
-        # Create slices for the canvas and element
-        canvas_slice = self[offset[0]:max_h, offset[1]:max_w]
-        element_slice = element[:rows, :cols]
+        e_mask = element_part != ' '
+        canvas[e_mask] = element_part[e_mask]
 
-        msg = f'Element does not fit in canvas. Canvas shape: {canvas_slice.shape}, Element shape: {element_slice.shape}'
-        assert canvas_slice.shape == element_slice.shape, msg
-        # Create a boolean mask of where the element slice is not empty
-        mask = element_slice != ''
-
-        # Apply the mask to update the canvas slice
-        canvas_slice[mask] = element_slice[mask]
-
+    def flip(self, axis=0):
+        if axis == 0:
+            self[:] = self[::-1]
+        elif axis == 1:
+            self[:] = self[:, ::-1]
     def __str__(self):
         return '\n'.join([''.join(row) for row in self])
 
 class TreeCoords:
-    def __init__(self, width: int, height: int, n_trees: int, method: str = 'lhc'):
-        self.height = height
+    def __init__(self, width, height, n_trees, method='lhc'):
         self.width = width
+        self.height = height
         self.n_trees = n_trees
         self.padding = 0
 
         if method == 'random':
             self.coords = self.random()
-        if method == 'lhc':
+        elif method == 'lhc':
             self.coords = self.latin_hyper_cube()
+        else:
+            raise ValueError('Method not recognized')
 
-    def random(self) -> list:
+    def random(self):
         coords = []
         for _ in range(self.n_trees):
-            x = np.random.randint(0, self.height)
-            y = np.random.randint(0, self.width)
+            x = np.random.randint(0, self.width-1)
+            y = np.random.randint(0, self.height)
             coords.append((x,y))
         return coords
 
-    def latin_hyper_cube(self) -> np.ndarray:
+    def latin_hyper_cube(self):
         sampler = qmc.LatinHypercube(d=2, strength=1)
         samples = sampler.random(n=self.n_trees)
         l_bounds = [self.padding, self.padding]
-        u_bounds = [self.height - self.padding, self.width - self.padding]
+        u_bounds = [self.width - self.padding, self.height - self.padding]
         return qmc.scale(samples, l_bounds, u_bounds).astype(int)
 
 class Trunk(AsciiCanvas):
@@ -66,7 +65,7 @@ class Trunk(AsciiCanvas):
         self.fill('|')
 
 class Crown(AsciiCanvas):
-    def __init__(self, width: int, height : int):
+    def __init__(self, width, height):
         for h in range(height):
             len_crown = min(h+1, width)
             c_start = int(width/2 - len_crown/2)
@@ -74,28 +73,27 @@ class Crown(AsciiCanvas):
             self[h, c_start:c_end] = 'x'
 
 class Tree(AsciiCanvas):
-    def __init__(self, width: int, height: int):
+    def __init__(self, width, height):
+        trunk_width_factor = np.random.uniform(0.2, 0.4)
+        trunk_height_factor = np.random.uniform(0.1, 0.3)
 
+        width_trunk = max(int(width * trunk_width_factor), 1)
+        height_trunk = max(int(height * trunk_height_factor), 1)
 
-        scale_trunk_width = np.random.uniform(0.2, 0.4)
-        scale_trunk_height = np.random.uniform(0.1, 0.3)
-
-        width_trunk = max(int(width * scale_trunk_width), 1)
-        height_trunk = max(int(height * scale_trunk_height), 1)
-
-        trunk_offset = (height - height_trunk, int((width - width_trunk)/2))
-        self.add_element(Trunk(width_trunk, height_trunk), trunk_offset)
+        trunk = Trunk(width_trunk, height_trunk)
+        trunk_offset = (int((width - width_trunk)/2), height - height_trunk)
+        self.add_element(trunk, trunk_offset)
 
         crown_height = height - height_trunk
         crown_width = width
-        self.add_element(Crown(crown_width, crown_height))
-
+        crown = Crown(crown_width, crown_height)
+        self.add_element(crown)
 
 class Forest(AsciiCanvas):
-    def __init__(self, width: int, height: int, n_trees: int, min_h: int,
-                 max_h: int, **kwargs):
+    def __init__(self, width, height, n_trees, min_h, max_h, **kwargs):
         coords = TreeCoords(width, height, n_trees, **kwargs).coords
         for coord in coords:
             height = np.random.randint(min_h, max_h)
             tree = Tree(height, height)
             self.add_element(tree, coord)
+

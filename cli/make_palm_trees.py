@@ -2,7 +2,7 @@
 
 import os
 import argparse
-from treez import Forest
+from treez import PalmForest
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Ascii tree generator',
@@ -13,9 +13,9 @@ def parse_args():
                         nargs=2, help='Window size (px)')
     parser.add_argument('-p', '--padding', default=5, type=int,
                         nargs=2, help='Border padding for tree trunk (px)')
-    parser.add_argument('--max_h', default=10, type=int,
+    parser.add_argument('--max_h', default=15, type=int,
                         help='Max tree height(px)')
-    parser.add_argument('--min_h', default=5, type=int,
+    parser.add_argument('--min_h', default=10, type=int,
                         help='Max tree height(px)')
     parser.add_argument('--method', default='lhc',
                         help='Method for calculating Tree coordinates')
@@ -23,18 +23,13 @@ def parse_args():
 
 
 def main(inps):
-    inps.width = inps.win_size[0]
-    inps.height = inps.win_size[1]
+    print(inps)
 
-    print(inps.win_size)
-    forest = Forest(width=inps.width,
-                    height=inps.height,
-                    n_trees=inps.n_trees,
-                    min_h=inps.min_h,
-                    max_h=inps.max_h,
-                    method=inps.method)
-    print(forest)
-
+    forest = PalmForest(*inps.win_size,
+                        n_trees=inps.n_trees,
+                        min_h=inps.min_h,
+                        max_h=inps.max_h,
+                        method=inps.method)
 
 if __name__ == '__main__':
     inps = parse_args()
