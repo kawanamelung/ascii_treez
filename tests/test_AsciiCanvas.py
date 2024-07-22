@@ -1,11 +1,10 @@
-from treez.make_trees import AsciiCanvas
+from treez import AsciiCanvas
 import pytest
 import numpy as np
 
 
 def test_blank():
-
-    # assert AsciiCanvas(10, 10).shape == (10, 10)
+    assert AsciiCanvas(10, 10).shape == (10, 10)
     c = AsciiCanvas(10, 1)
     assert AsciiCanvas(10, 1).shape == (1, 10)
 
@@ -27,6 +26,7 @@ def test_add_element():
     expected = np.array([ ['x', 'x'], ['x', 'x'] ])
 
     np.testing.assert_array_equal(canvas, expected)
+
 def test_add_identical_element():
     element = AsciiCanvas(2, 3)
     element.fill('x')

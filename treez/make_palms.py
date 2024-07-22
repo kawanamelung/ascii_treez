@@ -1,4 +1,7 @@
-from treez import AsciiCanvas
+import numpy as np
+from treez import AsciiCanvas, Coords
+
+
 class PalmTrunk(AsciiCanvas):
     def __init__(self, width, height, direction, x_pad):
         chars = [('(', ')'), ('|', '|'),('(', ')')]
@@ -96,7 +99,7 @@ class PalmTree(AsciiCanvas):
 class PalmForest(AsciiCanvas):
     def __init__(self, width, height, n_trees, min_h, max_h, **kwargs):
 
-        coords = TreeCoords(width, height, n_trees, **kwargs).coords
+        coords = Coords(width, height, n_trees, **kwargs).coords
 
         for coord in coords:
             height = np.random.randint(int(min_h/2), int(max_h/2))*2
